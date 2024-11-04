@@ -3,8 +3,8 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'disc
 export function createTrialEmbed() {
   const embed = new EmbedBuilder()
     .setColor('#0099ff')
-    .setTitle('Get Your Trial Code')
-    .setDescription('Click the button below to get your unique trial code!')
+    .setTitle('Get Your Trial Code Now!')
+    .setDescription('Click the button below to get your one-time, unique trial code!')
     .setTimestamp();
 
   const button = new ButtonBuilder()
