@@ -28,5 +28,4 @@ for (const file of eventFiles) {
     client.on(event.default.name, (...args) => event.default.execute(...args));
   }
 }
-console.log('Testing auto-deploy! And it works!');
 client.login(process.env.DISCORD_TOKEN);

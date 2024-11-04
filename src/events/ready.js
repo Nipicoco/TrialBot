@@ -20,7 +20,6 @@ export default {
             embeds: [embed],
             components: [row]
           });
-          console.log('Successfully updated trial message');
         } catch (error) {
           console.error('Failed to fetch trial message, creating new one:', error.message);
           const { embed, row } = createTrialEmbed();
@@ -28,17 +27,14 @@ export default {
             embeds: [embed],
             components: [row]
           });
-          console.log(`New trial message ID: ${message.id}`);
           updateEnvFile({ TRIAL_MESSAGE_ID: message.id });
         }
       } else {
-        console.log('No TRIAL_MESSAGE_ID in .env, creating new message');
         const { embed, row } = createTrialEmbed();
         const message = await trialChannel.send({ 
           embeds: [embed],
           components: [row]
         });
-        console.log(`New trial message ID: ${message.id}`);
         updateEnvFile({ TRIAL_MESSAGE_ID: message.id });
       }
     }
@@ -54,7 +50,6 @@ export default {
             embeds: [embed],
             components
           });
-          console.log('Successfully updated management message');
         } catch (error) {
           console.error('Failed to fetch management message, creating new one:', error.message);
           const { embed, components } = createKeyManagementEmbed();
@@ -62,17 +57,14 @@ export default {
             embeds: [embed],
             components
           });
-          console.log(`New management message ID: ${message.id}`);
           updateEnvFile({ MANAGEMENT_MESSAGE_ID: message.id });
         }
       } else {
-        console.log('No MANAGEMENT_MESSAGE_ID in .env, creating new message');
         const { embed, components } = createKeyManagementEmbed();
         const message = await managementChannel.send({
           embeds: [embed],
           components
         });
-        console.log(`New management message ID: ${message.id}`);
         updateEnvFile({ MANAGEMENT_MESSAGE_ID: message.id });
       }
     }

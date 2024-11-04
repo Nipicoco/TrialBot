@@ -19,7 +19,6 @@ export function updateEnvFile(updates) {
     }
     
     writeFileSync(envPath, envContent.trim());
-    console.log('Updated .env file with new values:', updates);
   } catch (error) {
     console.error('Error updating .env file:', error);
   }
@@ -38,7 +37,6 @@ export function updateWhitelist(userIds) {
     }
     
     writeFileSync(envPath, envContent.trim());
-    console.log('Updated whitelist in .env file');
   } catch (error) {
     console.error('Error updating whitelist in .env file:', error);
   }
