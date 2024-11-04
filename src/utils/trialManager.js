@@ -6,11 +6,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const trialCodesPath = join(__dirname, '../../data/trial_codes.json');
 const usedCodesPath = join(__dirname, '../../data/used_codes.json');
 
-// Whitelist of user IDs that can use the command multiple times
-const WHITELIST = [
-  '572959864423448580',  // Test account 2
-  // Add more whitelisted IDs here
-];
+// Get whitelist from environment variable
+const WHITELIST = process.env.WHITELIST_IDS ? process.env.WHITELIST_IDS.split(',') : [];
 
 class TrialManager {
   constructor() {
@@ -121,6 +118,29 @@ class TrialManager {
       if (usedCode === code) return userId;
     }
     return null;
+  }
+
+  getWhitelist() {
+    return WHITELIST;
+  }
+
+  addToWhitelist(userId) {
+    if (!WHITELIST.includes(userId)) {
+      WHITELIST.push(userId);
+      updateWhitelist(WHITELIST);
+      return true;
+    }
+    return false;
+  }
+
+  removeFromWhitelist(userId) {
+    const index = WHITELIST.indexOf(userId);
+    if (index > -1) {
+      WHITELIST.splice(index, 1);
+      updateWhitelist(WHITELIST);
+      return true;
+    }
+    return false;
   }
 }
 

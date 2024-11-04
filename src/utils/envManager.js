@@ -23,4 +23,23 @@ export function updateEnvFile(updates) {
   } catch (error) {
     console.error('Error updating .env file:', error);
   }
+}
+
+export function updateWhitelist(userIds) {
+  try {
+    let envContent = readFileSync(envPath, 'utf8');
+    const whitelistString = userIds.join(',');
+    
+    const regex = new RegExp(`^WHITELIST_IDS=.*$`, 'm');
+    if (envContent.match(regex)) {
+      envContent = envContent.replace(regex, `WHITELIST_IDS=${whitelistString}`);
+    } else {
+      envContent += `\nWHITELIST_IDS=${whitelistString}`;
+    }
+    
+    writeFileSync(envPath, envContent.trim());
+    console.log('Updated whitelist in .env file');
+  } catch (error) {
+    console.error('Error updating whitelist in .env file:', error);
+  }
 } 
