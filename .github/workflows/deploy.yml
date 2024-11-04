@@ -18,4 +18,4 @@ jobs:
             cd ~/apps/TrialBot
             git pull origin main
             npm install
-            pm2 restart trialbot
+            pm2 restart TrialBot
