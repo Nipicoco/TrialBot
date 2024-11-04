@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [ main ]  # or master, depending on your branch name
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -14,4 +14,8 @@ jobs:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: ~/deploy.sh
+          script: |
+            cd ~/apps/TrialBot
+            git pull origin main
+            npm install
+            pm2 restart TrialBot
