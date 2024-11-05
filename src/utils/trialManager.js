@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -19,9 +19,37 @@ class TrialManager {
     if (!existsSync(backupDir)) {
       mkdirSync(backupDir, { recursive: true });
     }
+
+    // Create data files from examples if they don't exist
+    this.initializeDataFiles();
+    
     this.trialCodes = this.loadTrialCodes();
     this.usedCodes = this.loadUsedCodes();
     this.secondChances = this.loadSecondChances();
+  }
+
+  initializeDataFiles() {
+    const files = [
+      { path: trialCodesPath, example: trialCodesPath + '.example' },
+      { path: usedCodesPath, example: usedCodesPath + '.example' },
+      { path: secondChancesPath, example: secondChancesPath + '.example' }
+    ];
+
+    for (const file of files) {
+      if (!existsSync(file.path) && existsSync(file.example)) {
+        try {
+          copyFileSync(file.example, file.path);
+        } catch (error) {
+          console.error(`Failed to initialize ${file.path}:`, error);
+          // Create empty file with default structure
+          writeFileSync(file.path, JSON.stringify(
+            file.path.includes('trial_codes') ? { codes: [] } :
+            file.path.includes('used_codes') ? { used: {} } :
+            { users: [] }
+          ));
+        }
+      }
+    }
   }
 
   loadTrialCodes() {
