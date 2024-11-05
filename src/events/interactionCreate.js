@@ -27,6 +27,9 @@ export default {
           case 'view-used':
             await handleViewUsedKeys(interaction);
             break;
+          case 'wipe-keys':
+            await handleWipeKeys(interaction);
+            break;
         }
       } else if (interaction.isModalSubmit()) {
         switch (interaction.customId) {
@@ -38,6 +41,9 @@ export default {
             break;
           case 'delete-key-modal':
             await handleDeleteKeySubmit(interaction);
+            break;
+          case 'wipe-keys-confirm':
+            await handleWipeKeysConfirm(interaction);
             break;
         }
       }
@@ -220,11 +226,10 @@ async function handleAddKeySubmit(interaction) {
 
 async function handleBulkAddSubmit(interaction) {
   const keysInput = interaction.fields.getTextInputValue('keys-input');
-  // Split by both commas and newlines, then clean up the results
   const keys = keysInput
-    .split(/[,\n]/)  // Split by comma or newline
-    .map(key => key.trim())  // Remove whitespace
-    .filter(key => key);  // Remove empty entries
+    .split(/[,\n]/)
+    .map(key => key.trim())
+    .filter(key => key);
   
   if (keys.length === 0) {
     await interaction.reply({
@@ -257,9 +262,56 @@ async function handleDeleteKeySubmit(interaction) {
 }
 
 async function updateManagementEmbed(interaction) {
-  const channel = await interaction.client.channels.fetch(process.env.MANAGEMENT_CHANNEL_ID);
-  if (channel) {
-    const { embed, components } = createKeyManagementEmbed();
-    await channel.send({ embeds: [embed], components });
+  const managementChannel = await interaction.client.channels.fetch(process.env.MANAGEMENT_CHANNEL_ID);
+  if (managementChannel && process.env.MANAGEMENT_MESSAGE_ID) {
+    try {
+      const managementMessage = await managementChannel.messages.fetch(process.env.MANAGEMENT_MESSAGE_ID);
+      const { embed, components } = createKeyManagementEmbed();
+      await managementMessage.edit({
+        embeds: [embed],
+        components
+      });
+    } catch (error) {
+      console.error('Failed to update management embed:', error);
+    }
   }
+}
+
+async function handleWipeKeys(interaction) {
+  const modal = new ModalBuilder()
+    .setCustomId('wipe-keys-confirm')
+    .setTitle('Confirm Wipe All Keys');
+
+  const confirmInput = new TextInputBuilder()
+    .setCustomId('confirm-input')
+    .setLabel('Type "CONFIRM" to wipe all unused keys')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('CONFIRM')
+    .setRequired(true);
+
+  const row = new ActionRowBuilder().addComponents(confirmInput);
+  modal.addComponents(row);
+
+  await interaction.showModal(modal);
+}
+
+async function handleWipeKeysConfirm(interaction) {
+  const confirmation = interaction.fields.getTextInputValue('confirm-input');
+  
+  if (confirmation !== 'CONFIRM') {
+    await interaction.reply({
+      content: 'Operation cancelled - confirmation text did not match.',
+      ephemeral: true
+    });
+    return;
+  }
+
+  const count = trialManager.wipeUnusedKeys();
+  
+  await interaction.reply({
+    content: `Successfully wiped ${count} unused keys!`,
+    ephemeral: true
+  });
+
+  await updateManagementEmbed(interaction);
 }

@@ -142,6 +142,13 @@ class TrialManager {
     }
     return false;
   }
+
+  wipeUnusedKeys() {
+    const count = this.trialCodes.codes.length;
+    this.trialCodes.codes = [];
+    this.saveTrialCodes();
+    return count;
+  }
 }
 
 export default new TrialManager(); 
