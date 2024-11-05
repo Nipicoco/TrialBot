@@ -2,6 +2,7 @@ import { Events, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilde
 import trialManager from '../utils/trialManager.js';
 import { createKeyManagementEmbed } from '../utils/keyManagementEmbed.js';
 import rateLimiter from '../utils/rateLimiter.js';
+import fetch from 'node-fetch';
 
 export default {
   name: Events.InteractionCreate,
@@ -174,10 +175,10 @@ async function handleBulkAddModal(interaction) {
 
   const keysInput = new TextInputBuilder()
     .setCustomId('keys-input')
-    .setLabel('Enter keys (separated by commas or newlines)')
+    .setLabel('Enter keys or upload a .txt file')
     .setStyle(TextInputStyle.Paragraph)
-    .setPlaceholder('TRIAL-XXXX-XXXX-XXXX\nTRIAL-YYYY-YYYY-YYYY\nOr use commas to separate')
-    .setRequired(true);
+    .setPlaceholder('Paste keys here OR\nUpload a .txt file in your next message')
+    .setRequired(false);
 
   const row = new ActionRowBuilder().addComponents(keysInput);
   modal.addComponents(row);
@@ -241,6 +242,61 @@ async function handleAddKeySubmit(interaction) {
 
 async function handleBulkAddSubmit(interaction) {
   const keysInput = interaction.fields.getTextInputValue('keys-input');
+  
+  if (!keysInput.trim()) {
+    // If no keys pasted, wait for file upload
+    await interaction.reply({
+      content: 'Please upload a .txt file containing your keys (one key per line)',
+      ephemeral: true
+    });
+
+    try {
+      const filter = m => 
+        m.author.id === interaction.user.id && 
+        m.attachments.size > 0 &&
+        m.attachments.first().name.endsWith('.txt');
+
+      const collected = await interaction.channel.awaitMessages({
+        filter,
+        max: 1,
+        time: 30000,
+        errors: ['time']
+      });
+
+      const attachment = collected.first().attachments.first();
+      const response = await fetch(attachment.url);
+      const text = await response.text();
+      
+      const keys = text
+        .split(/[\n\r]+/)
+        .map(key => key.trim())
+        .filter(key => key && key.length > 0);
+
+      if (keys.length === 0) {
+        await interaction.followUp({
+          content: 'No valid keys found in the file.',
+          ephemeral: true
+        });
+        return;
+      }
+
+      trialManager.addTrialCodes(keys);
+      await interaction.followUp({
+        content: `Successfully added ${keys.length} keys from file!`,
+        ephemeral: true
+      });
+      await updateManagementEmbed(interaction);
+
+    } catch (error) {
+      await interaction.followUp({
+        content: 'No file uploaded within 30 seconds or an error occurred.',
+        ephemeral: true
+      });
+    }
+    return;
+  }
+
+  // Handle pasted keys
   const keys = keysInput
     .split(/[,\n]/)
     .map(key => key.trim())
@@ -255,12 +311,10 @@ async function handleBulkAddSubmit(interaction) {
   }
 
   trialManager.addTrialCodes(keys);
-  
   await interaction.reply({
     content: `Successfully added ${keys.length} keys!`,
     ephemeral: true
   });
-
   await updateManagementEmbed(interaction);
 }
 
