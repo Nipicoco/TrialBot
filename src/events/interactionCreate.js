@@ -94,6 +94,20 @@ async function handleTrialRequest(interaction) {
   await interaction.editReply({
     content: `Here's your trial code: ${trialCode}`
   });
+
+  const managementChannel = await interaction.client.channels.fetch(process.env.MANAGEMENT_CHANNEL_ID);
+  if (managementChannel && process.env.MANAGEMENT_MESSAGE_ID) {
+    try {
+      const managementMessage = await managementChannel.messages.fetch(process.env.MANAGEMENT_MESSAGE_ID);
+      const { embed, components } = createKeyManagementEmbed();
+      await managementMessage.edit({
+        embeds: [embed],
+        components
+      });
+    } catch (error) {
+      console.error('Failed to update management embed:', error);
+    }
+  }
 }
 
 async function handleViewKeys(interaction) {
