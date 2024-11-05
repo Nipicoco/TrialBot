@@ -1,4 +1,4 @@
-import { Events, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } from 'discord.js';
+import { Events, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import trialManager from '../utils/trialManager.js';
 import { createKeyManagementEmbed } from '../utils/keyManagementEmbed.js';
 import rateLimiter from '../utils/rateLimiter.js';
@@ -32,6 +32,12 @@ export default {
             break;
           case 'second-chance':
             await handleSecondChanceModal(interaction);
+            break;
+          case 'prev_page':
+            await handleKeysPagination(interaction, -1);
+            break;
+          case 'next_page':
+            await handleKeysPagination(interaction, 1);
             break;
         }
       } else if (interaction.isModalSubmit()) {
@@ -100,22 +106,47 @@ async function handleTrialRequest(interaction) {
 
 async function handleViewKeys(interaction) {
   const unusedCodes = trialManager.getAllUnusedCodes();
-  const chunks = unusedCodes.reduce((acc, code, i) => {
-    const chunkIndex = Math.floor(i / 10);
-    if (!acc[chunkIndex]) acc[chunkIndex] = [];
-    acc[chunkIndex].push(code);
-    return acc;
-  }, []);
+  const KEYS_PER_PAGE = 20;
+  const totalPages = Math.ceil(unusedCodes.length / KEYS_PER_PAGE);
+  const currentPage = 0;
 
-  const embeds = chunks.map((chunk, i) => 
-    new EmbedBuilder()
-      .setColor('#0099ff')
-      .setTitle(`Available Keys (Page ${i + 1}/${chunks.length})`)
-      .setDescription(chunk.join('\n'))
-  );
+  if (unusedCodes.length === 0) {
+    await interaction.reply({
+      content: 'No keys available.',
+      ephemeral: true
+    });
+    return;
+  }
 
-  await interaction.reply({ embeds, ephemeral: true });
-  await updateManagementEmbed(interaction);
+  const startIndex = currentPage * KEYS_PER_PAGE;
+  const endIndex = startIndex + KEYS_PER_PAGE;
+  const currentKeys = unusedCodes.slice(startIndex, endIndex);
+
+  const embed = new EmbedBuilder()
+    .setColor('#0099ff')
+    .setTitle(`Available Keys (Page ${currentPage + 1}/${totalPages})`)
+    .setDescription(currentKeys.join('\n'))
+    .setFooter({ text: `Total Keys: ${unusedCodes.length}` });
+
+  const row = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('prev_page')
+        .setLabel('Previous')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(currentPage === 0),
+      new ButtonBuilder()
+        .setCustomId('next_page')
+        .setLabel('Next')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(currentPage === totalPages - 1)
+    );
+
+  await interaction.reply({
+    embeds: [embed],
+    components: [row],
+    ephemeral: true
+  });
 }
 
 async function handleAddKeyModal(interaction) {
@@ -330,4 +361,42 @@ async function handleSecondChanceSubmit(interaction) {
   });
 
   await updateManagementEmbed(interaction);
+}
+
+async function handleKeysPagination(interaction, direction) {
+  const unusedCodes = trialManager.getAllUnusedCodes();
+  const KEYS_PER_PAGE = 20;
+  const totalPages = Math.ceil(unusedCodes.length / KEYS_PER_PAGE);
+  
+  const currentPage = parseInt(interaction.message.embeds[0].title.match(/Page (\d+)/)[1]) - 1;
+  const newPage = currentPage + direction;
+
+  const startIndex = newPage * KEYS_PER_PAGE;
+  const endIndex = startIndex + KEYS_PER_PAGE;
+  const currentKeys = unusedCodes.slice(startIndex, endIndex);
+
+  const embed = new EmbedBuilder()
+    .setColor('#0099ff')
+    .setTitle(`Available Keys (Page ${newPage + 1}/${totalPages})`)
+    .setDescription(currentKeys.join('\n'))
+    .setFooter({ text: `Total Keys: ${unusedCodes.length}` });
+
+  const row = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('prev_page')
+        .setLabel('Previous')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(newPage === 0),
+      new ButtonBuilder()
+        .setCustomId('next_page')
+        .setLabel('Next')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(newPage === totalPages - 1)
+    );
+
+  await interaction.update({
+    embeds: [embed],
+    components: [row]
+  });
 }
