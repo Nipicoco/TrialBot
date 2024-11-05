@@ -38,13 +38,13 @@ export function createKeyManagementEmbed() {
         .setLabel('Delete Key')
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
-        .setCustomId('wipe-keys')
-        .setLabel('Wipe All Keys')
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
         .setCustomId('view-used')
         .setLabel('View Used Keys')
-        .setStyle(ButtonStyle.Secondary)
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('wipe-keys')
+        .setLabel('Wipe All Keys')
+        .setStyle(ButtonStyle.Danger)
     );
 
   return { embed, components: [row1, row2] };
