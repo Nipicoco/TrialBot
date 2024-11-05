@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -54,7 +54,19 @@ class TrialManager {
 
   loadTrialCodes() {
     try {
-      return JSON.parse(readFileSync(trialCodesPath, 'utf8'));
+      const data = JSON.parse(readFileSync(trialCodesPath, 'utf8'));
+      
+      // If codes array is empty, try to restore from backup
+      if (data.codes.length === 0) {
+        const latestBackup = this.getLatestBackup();
+        if (latestBackup && latestBackup.unusedKeys.length > 0) {
+          console.log('Restoring keys from backup...');
+          data.codes = latestBackup.unusedKeys;
+          this.saveTrialCodes();
+        }
+      }
+      
+      return data;
     } catch {
       return { codes: [] };
     }
@@ -240,6 +252,25 @@ class TrialManager {
     } catch (error) {
       console.error('Failed to create backup:', error);
       return false;
+    }
+  }
+
+  getLatestBackup() {
+    try {
+      const files = readdirSync(backupDir)
+        .filter(file => file.startsWith('keys_backup_'))
+        .sort()
+        .reverse();
+
+      if (files.length === 0) return null;
+
+      const latestBackup = JSON.parse(
+        readFileSync(join(backupDir, files[0]), 'utf8')
+      );
+      return latestBackup;
+    } catch (error) {
+      console.error('Failed to get latest backup:', error);
+      return null;
     }
   }
 }
