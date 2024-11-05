@@ -106,9 +106,12 @@ class TrialManager {
 
   getTrialCode(userId) {
     // Check if user already has a code
-    const existingCode = this.getUserTrial(userId);
-    if (existingCode && !WHITELIST.includes(userId)) {
-      return existingCode;
+    const existingTrials = this.getUserTrials(userId);
+    const hasSecondChance = this.hasSecondChance(userId);
+
+    // If user already has a code but no second chance, return null
+    if (existingTrials.length > 0 && !hasSecondChance) {
+      return null;
     }
 
     // Check if there are available codes
@@ -124,7 +127,15 @@ class TrialManager {
       // For regular users, remove and store the code
       const code = this.trialCodes.codes.pop();
       this.saveTrialCodes();
-      this.usedCodes.used[userId] = code;
+      
+      // Store the code in used codes
+      if (!this.usedCodes.used[userId]) {
+        this.usedCodes.used[userId] = code;
+      } else {
+        // For second chance, store it with a different key
+        this.usedCodes.used[`${userId}_second`] = code;
+      }
+      
       this.saveUsedCodes();
       return code;
     }
@@ -228,11 +239,13 @@ class TrialManager {
 
   getUserTrials(userId) {
     const trials = [];
-    const userCodes = Object.entries(this.usedCodes.used)
-      .filter(([id]) => id === userId)
-      .map(([, code]) => code);
-    
-    return userCodes;
+    if (this.usedCodes.used[userId]) {
+      trials.push(this.usedCodes.used[userId]);
+    }
+    if (this.usedCodes.used[`${userId}_second`]) {
+      trials.push(this.usedCodes.used[`${userId}_second`]);
+    }
+    return trials;
   }
 
   backupKeys() {
