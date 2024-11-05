@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -7,11 +7,18 @@ const trialCodesPath = join(__dirname, '../../data/trial_codes.json');
 const usedCodesPath = join(__dirname, '../../data/used_codes.json');
 const secondChancesPath = join(__dirname, '../../data/second_chances.json');
 
+// Add backup directory path
+const backupDir = join(__dirname, '../../backups');
+
 // Get whitelist from environment variable
 const WHITELIST = process.env.WHITELIST_IDS ? process.env.WHITELIST_IDS.split(',') : [];
 
 class TrialManager {
   constructor() {
+    // Create backups directory if it doesn't exist
+    if (!existsSync(backupDir)) {
+      mkdirSync(backupDir, { recursive: true });
+    }
     this.trialCodes = this.loadTrialCodes();
     this.usedCodes = this.loadUsedCodes();
     this.secondChances = this.loadSecondChances();
@@ -86,12 +93,12 @@ class TrialManager {
   // Method to add new trial codes
   addTrialCodes(newCodes) {
     const validCodes = newCodes.filter(code => {
-      // Add any validation logic you need for your key format
       return code && typeof code === 'string' && code.length > 0;
     });
     
     this.trialCodes.codes.push(...validCodes);
     this.saveTrialCodes();
+    this.backupKeys();
     return validCodes.length;
   }
 
@@ -122,6 +129,7 @@ class TrialManager {
     if (!this.trialCodes.codes.includes(code)) {
       this.trialCodes.codes.push(code);
       this.saveTrialCodes();
+      this.backupKeys();
       return true;
     }
     return false;
@@ -161,6 +169,7 @@ class TrialManager {
     const count = this.trialCodes.codes.length;
     this.trialCodes.codes = [];
     this.saveTrialCodes();
+    this.backupKeys();
     return count;
   }
 
@@ -183,6 +192,27 @@ class TrialManager {
       trials.push(this.usedCodes.used[userId]);
     }
     return trials;
+  }
+
+  backupKeys() {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupPath = join(backupDir, `keys_backup_${timestamp}.txt`);
+    
+    const backupContent = {
+      timestamp,
+      unusedKeys: this.trialCodes.codes,
+      usedKeys: this.usedCodes.used,
+      secondChances: this.secondChances.users
+    };
+
+    try {
+      writeFileSync(backupPath, JSON.stringify(backupContent, null, 2));
+      console.log(`Backup created: ${backupPath}`);
+      return true;
+    } catch (error) {
+      console.error('Failed to create backup:', error);
+      return false;
+    }
   }
 }
 
