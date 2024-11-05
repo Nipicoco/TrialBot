@@ -23,7 +23,7 @@ export function createKeyManagementEmbed() {
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId('bulk-add')
-        .setLabel('Bulk Add Keys')
+        .setLabel('Add Keys')
         .setStyle(ButtonStyle.Success)
     );
 
