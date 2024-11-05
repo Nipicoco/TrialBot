@@ -22,10 +22,6 @@ export function createKeyManagementEmbed() {
         .setLabel('View Keys')
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
-        .setCustomId('wipe-keys')
-        .setLabel('Wipe All Keys')
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
         .setCustomId('bulk-add')
         .setLabel('Bulk Add Keys')
         .setStyle(ButtonStyle.Success)
@@ -34,13 +30,9 @@ export function createKeyManagementEmbed() {
   const row2 = new ActionRowBuilder()
     .addComponents(
       new ButtonBuilder()
-        .setCustomId('delete-key')
-        .setLabel('Delete Key')
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
         .setCustomId('view-used')
         .setLabel('View Used Keys')
-        .setStyle(ButtonStyle.Secondary)
+        .setStyle(ButtonStyle.Secondary),
     );
 
   return { embed, components: [row1, row2] };
