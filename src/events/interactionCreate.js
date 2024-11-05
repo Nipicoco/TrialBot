@@ -79,13 +79,28 @@ async function handleTrialRequest(interaction) {
   const existingTrials = trialManager.getUserTrials(userId);
   const hasSecondChance = trialManager.hasSecondChance(userId);
 
-  if (existingTrials.length > 0) {
-    if (existingTrials.length === 2 || (existingTrials.length === 1 && !hasSecondChance)) {
+  if (existingTrials.length === 2 || (existingTrials.length === 1 && !hasSecondChance)) {
+    await interaction.editReply({
+      content: `You've already used your trial codes:\n${existingTrials.join('\n')}`
+    });
+    return;
+  }
+
+  if (existingTrials.length === 1 && hasSecondChance) {
+    const trialCode = trialManager.getTrialCode(userId);
+    
+    if (!trialCode) {
       await interaction.editReply({
-        content: `You've already used your trial codes:\n${existingTrials.join('\n')}`
+        content: 'Sorry, there are no trial codes available at the moment.'
       });
       return;
     }
+
+    await interaction.editReply({
+      content: `Here's your second chance code: ${trialCode}\n(Second Chance Code)`
+    });
+    await updateManagementEmbed(interaction);
+    return;
   }
 
   const trialCode = trialManager.getTrialCode(userId);
@@ -98,7 +113,7 @@ async function handleTrialRequest(interaction) {
   }
 
   await interaction.editReply({
-    content: `Here's your trial code: ${trialCode}\n${existingTrials.length === 1 ? '(Second Chance Code)' : ''}`
+    content: `Here's your trial code: ${trialCode}`
   });
 
   await updateManagementEmbed(interaction);

@@ -228,10 +228,11 @@ class TrialManager {
 
   getUserTrials(userId) {
     const trials = [];
-    if (this.usedCodes.used[userId]) {
-      trials.push(this.usedCodes.used[userId]);
-    }
-    return trials;
+    const userCodes = Object.entries(this.usedCodes.used)
+      .filter(([id]) => id === userId)
+      .map(([, code]) => code);
+    
+    return userCodes;
   }
 
   backupKeys() {
