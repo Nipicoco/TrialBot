@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const trialCodesPath = join(__dirname, '../../data/trial_codes.json');
 const usedCodesPath = join(__dirname, '../../data/used_codes.json');
+const secondChancesPath = join(__dirname, '../../data/second_chances.json');
 
 // Get whitelist from environment variable
 const WHITELIST = process.env.WHITELIST_IDS ? process.env.WHITELIST_IDS.split(',') : [];
@@ -13,6 +14,7 @@ class TrialManager {
   constructor() {
     this.trialCodes = this.loadTrialCodes();
     this.usedCodes = this.loadUsedCodes();
+    this.secondChances = this.loadSecondChances();
   }
 
   loadTrialCodes() {
@@ -31,12 +33,24 @@ class TrialManager {
     }
   }
 
+  loadSecondChances() {
+    try {
+      return JSON.parse(readFileSync(secondChancesPath, 'utf8'));
+    } catch {
+      return { users: [] };
+    }
+  }
+
   saveTrialCodes() {
     writeFileSync(trialCodesPath, JSON.stringify(this.trialCodes, null, 2));
   }
 
   saveUsedCodes() {
     writeFileSync(usedCodesPath, JSON.stringify(this.usedCodes, null, 2));
+  }
+
+  saveSecondChances() {
+    writeFileSync(secondChancesPath, JSON.stringify(this.secondChances, null, 2));
   }
 
   getUserTrial(userId) {
@@ -148,6 +162,27 @@ class TrialManager {
     this.trialCodes.codes = [];
     this.saveTrialCodes();
     return count;
+  }
+
+  hasSecondChance(userId) {
+    return this.secondChances.users.includes(userId);
+  }
+
+  addSecondChance(userId) {
+    if (!this.hasSecondChance(userId)) {
+      this.secondChances.users.push(userId);
+      this.saveSecondChances();
+      return true;
+    }
+    return false;
+  }
+
+  getUserTrials(userId) {
+    const trials = [];
+    if (this.usedCodes.used[userId]) {
+      trials.push(this.usedCodes.used[userId]);
+    }
+    return trials;
   }
 }
 

@@ -34,6 +34,10 @@ export function createKeyManagementEmbed() {
         .setLabel('View Used Keys')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
+        .setCustomId('second-chance')
+        .setLabel('Give Second Chance')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
         .setCustomId('wipe-keys')
         .setLabel('Wipe All Keys')
         .setStyle(ButtonStyle.Danger)

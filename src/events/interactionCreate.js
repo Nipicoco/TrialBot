@@ -30,6 +30,9 @@ export default {
           case 'wipe-keys':
             await handleWipeKeys(interaction);
             break;
+          case 'second-chance':
+            await handleSecondChanceModal(interaction);
+            break;
         }
       } else if (interaction.isModalSubmit()) {
         switch (interaction.customId) {
@@ -44,6 +47,9 @@ export default {
             break;
           case 'wipe-keys-confirm':
             await handleWipeKeysConfirm(interaction);
+            break;
+          case 'second-chance-modal':
+            await handleSecondChanceSubmit(interaction);
             break;
         }
       }
@@ -64,28 +70,16 @@ async function handleTrialRequest(interaction) {
   
   await interaction.deferReply({ ephemeral: true });
 
-  if (rateLimiter.isBlacklisted(userId)) {
-    const remainingMinutes = rateLimiter.getBlacklistRemaining(userId);
-    await interaction.editReply({
-      content: `⛔ You have been temporarily blacklisted from requesting trial codes due to spam. Please try again in ${remainingMinutes} minutes.`
-    });
-    return;
-  }
+  const existingTrials = trialManager.getUserTrials(userId);
+  const hasSecondChance = trialManager.hasSecondChance(userId);
 
-  if (!rateLimiter.checkAndAddAttempt(userId)) {
-    await interaction.editReply({
-      content: '⚠️ You are clicking too fast! You have been temporarily blacklisted for 1 hour.'
-    });
-    return;
-  }
-
-  const existingTrial = trialManager.getUserTrial(userId);
-
-  if (existingTrial) {
-    await interaction.editReply({
-      content: `You've already received a trial code. Your code is: ${existingTrial}`
-    });
-    return;
+  if (existingTrials.length > 0) {
+    if (existingTrials.length === 2 || (existingTrials.length === 1 && !hasSecondChance)) {
+      await interaction.editReply({
+        content: `You've already used your trial codes:\n${existingTrials.join('\n')}`
+      });
+      return;
+    }
   }
 
   const trialCode = trialManager.getTrialCode(userId);
@@ -98,22 +92,10 @@ async function handleTrialRequest(interaction) {
   }
 
   await interaction.editReply({
-    content: `Here's your trial code: ${trialCode}`
+    content: `Here's your trial code: ${trialCode}\n${existingTrials.length === 1 ? '(Second Chance Code)' : ''}`
   });
 
-  const managementChannel = await interaction.client.channels.fetch(process.env.MANAGEMENT_CHANNEL_ID);
-  if (managementChannel && process.env.MANAGEMENT_MESSAGE_ID) {
-    try {
-      const managementMessage = await managementChannel.messages.fetch(process.env.MANAGEMENT_MESSAGE_ID);
-      const { embed, components } = createKeyManagementEmbed();
-      await managementMessage.edit({
-        embeds: [embed],
-        components
-      });
-    } catch (error) {
-      console.error('Failed to update management embed:', error);
-    }
-  }
+  await updateManagementEmbed(interaction);
 }
 
 async function handleViewKeys(interaction) {
@@ -314,4 +296,34 @@ async function handleWipeKeysConfirm(interaction) {
   });
 
   await updateManagementEmbed(interaction);
+}
+
+async function handleSecondChanceModal(interaction) {
+  const modal = new ModalBuilder()
+    .setCustomId('second-chance-modal')
+    .setTitle('Give Second Chance');
+
+  const userInput = new TextInputBuilder()
+    .setCustomId('user-input')
+    .setLabel('Enter Discord User ID')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('123456789012345678')
+    .setRequired(true);
+
+  const row = new ActionRowBuilder().addComponents(userInput);
+  modal.addComponents(row);
+
+  await interaction.showModal(modal);
+}
+
+async function handleSecondChanceSubmit(interaction) {
+  const userId = interaction.fields.getTextInputValue('user-input');
+  const success = trialManager.addSecondChance(userId);
+
+  await interaction.reply({
+    content: success ? 
+      `Successfully gave second chance to <@${userId}>` : 
+      'User already has a second chance!',
+    ephemeral: true
+  });
 }
