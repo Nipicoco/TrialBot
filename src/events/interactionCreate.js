@@ -140,9 +140,9 @@ async function handleBulkAddModal(interaction) {
 
   const keysInput = new TextInputBuilder()
     .setCustomId('keys-input')
-    .setLabel('Enter keys (comma-separated)')
+    .setLabel('Enter keys (separated by commas or newlines)')
     .setStyle(TextInputStyle.Paragraph)
-    .setPlaceholder('TRIAL-XXXX-XXXX-XXXX, TRIAL-YYYY-YYYY-YYYY')
+    .setPlaceholder('TRIAL-XXXX-XXXX-XXXX\nTRIAL-YYYY-YYYY-YYYY\nOr use commas to separate')
     .setRequired(true);
 
   const row = new ActionRowBuilder().addComponents(keysInput);
@@ -206,7 +206,11 @@ async function handleAddKeySubmit(interaction) {
 
 async function handleBulkAddSubmit(interaction) {
   const keysInput = interaction.fields.getTextInputValue('keys-input');
-  const keys = keysInput.split(',').map(key => key.trim()).filter(key => key);
+  // Split by both commas and newlines, then clean up the results
+  const keys = keysInput
+    .split(/[,\n]/)  // Split by comma or newline
+    .map(key => key.trim())  // Remove whitespace
+    .filter(key => key);  // Remove empty entries
   
   if (keys.length === 0) {
     await interaction.reply({

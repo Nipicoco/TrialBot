@@ -5,7 +5,7 @@ export function createTrialEmbed() {
     .setColor('#0099ff')
     .setTitle('Get Your Trial Code Now!')
     .setDescription('Click the button below to get your one-time, unique trial code!')
-    .setTimestamp();
+    .setFooter({ text: 'This code is only valid for one use! Misuse will result in a ban.' });
 
   const button = new ButtonBuilder()
     .setCustomId('request-trial')
