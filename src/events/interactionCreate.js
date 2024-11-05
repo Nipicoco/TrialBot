@@ -115,6 +115,7 @@ async function handleViewKeys(interaction) {
   );
 
   await interaction.reply({ embeds, ephemeral: true });
+  await updateManagementEmbed(interaction);
 }
 
 async function handleAddKeyModal(interaction) {
@@ -192,6 +193,7 @@ async function handleViewUsedKeys(interaction) {
   );
 
   await interaction.reply({ embeds, ephemeral: true });
+  await updateManagementEmbed(interaction);
 }
 
 async function handleAddKeySubmit(interaction) {
@@ -326,4 +328,6 @@ async function handleSecondChanceSubmit(interaction) {
       'User already has a second chance!',
     ephemeral: true
   });
+
+  await updateManagementEmbed(interaction);
 }
